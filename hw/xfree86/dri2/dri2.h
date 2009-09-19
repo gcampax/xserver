@@ -207,7 +207,7 @@ typedef int (*DRI2GetParamProcPtr) (ClientPtr client,
 /**
  * Version of the DRI2InfoRec structure defined in this header
  */
-#define DRI2INFOREC_VERSION 9
+#define DRI2INFOREC_VERSION 10
 
 typedef struct {
     unsigned int version;       /**< Version of this struct */

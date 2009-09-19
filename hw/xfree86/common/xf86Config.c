@@ -118,7 +118,8 @@ static ModuleDefault ModuleDefaults[] = {
     {.name = "fb",.toLoad = TRUE,.load_opt = NULL},
     {.name = "shadow",.toLoad = TRUE,.load_opt = NULL},
 #endif
-    {.name = NULL,.toLoad = FALSE,.load_opt = NULL}
+    {.name = "xwayland",.toLoad = FALSE,.load_opt=NULL},
+    {.name = NULL,.toLoad = FALSE,.load_opt=NULL}
 };
 
 /* Forward declarations */
@@ -260,6 +261,17 @@ xf86ModulelistFromConfig(pointer **optlist)
         return NULL;
     }
 
+    /*
+     * Set the xwayland module to autoload if requested.
+     */
+    if (xorgWayland) {
+        for (i=0 ; ModuleDefaults[i].name != NULL ; i++) {
+            if (strcmp(ModuleDefaults[i].name, "xwayland") == 0) {
+                ModuleDefaults[i].toLoad = TRUE;
+            }
+        }
+    }
+    
     if (xf86configptr->conf_modules) {
         /* Walk the disable list and let people know what we've parsed to
          * not be loaded 
@@ -863,6 +875,13 @@ configServerFlags(XF86ConfFlagsPtr flagsconf, XF86OptionPtr layoutopts)
     }
     xf86Msg(from, "%sutomatically adding GPU devices\n",
             xf86Info.autoAddGPU ? "A" : "Not a");
+
+    /* FIXME: Do that at the right place (before xf86Msg). */
+    if (xorgWayland) {
+            xf86Info.autoAddDevices = FALSE;
+            xf86Info.autoEnableDevices = FALSE;
+    }
+
     /*
      * Set things up based on the config file information.  Some of these
      * settings may be overridden later when the command line options are
@@ -953,9 +972,10 @@ configServerFlags(XF86ConfFlagsPtr flagsconf, XF86OptionPtr layoutopts)
     }
 #endif
 
-    /* if we're not hotplugging, force some input devices to exist */
-    xf86Info.forceInputDevices = !(xf86Info.autoAddDevices &&
-                                   xf86Info.autoEnableDevices);
+    if (xorgWayland) /* Don't force input devices */
+	xf86Info.forceInputDevices = FALSE;
+    else /* if we're not hotplugging, force some input devices to exist */
+	xf86Info.forceInputDevices = !(xf86Info.autoAddDevices && xf86Info.autoEnableDevices);
 
     /* when forcing input devices, we use kbd. otherwise evdev, so use the
      * evdev rules set. */

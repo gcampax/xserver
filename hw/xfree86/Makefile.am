@@ -9,6 +9,10 @@ DRI2_SUBDIR = dri2
 DRI2_LIB = dri2/libdri2.la
 endif
 
+if WAYLAND
+WAYLAND_SUBDIR = xwayland
+endif
+
 if XF86UTILS
 XF86UTILS_SUBDIR = utils
 endif
@@ -27,12 +31,12 @@ endif
 
 SUBDIRS = common ddc x86emu $(INT10_SUBDIR) os-support parser \
 	  ramdac $(VGAHW_SUBDIR) loader modes $(DRI_SUBDIR) \
-	  $(DRI2_SUBDIR) . $(VBE_SUBDIR) i2c dixmods \
+	  $(DRI2_SUBDIR)  $(WAYLAND_SUBDIR) . $(VBE_SUBDIR) i2c dixmods \
 	  fbdevhw shadowfb exa $(XF86UTILS_SUBDIR) doc man
 
 DIST_SUBDIRS = common ddc i2c x86emu int10 fbdevhw os-support \
                parser ramdac shadowfb vbe vgahw \
-               loader dixmods dri dri2 exa modes \
+               loader dixmods dri dri2 exa modes xwayland \
 	       utils doc man
 
 bin_PROGRAMS = Xorg

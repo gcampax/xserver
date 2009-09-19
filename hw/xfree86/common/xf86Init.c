@@ -546,6 +546,13 @@ InitOutput(ScreenInfo * pScreenInfo, int argc, char **argv)
 
             if (!(flags & HW_SKIP_CONSOLE))
                 xorgHWOpenConsole = TRUE;
+
+	    if (xorgWayland &&
+		(NEED_IO_ENABLED(flags) || !(flags & HW_SKIP_CONSOLE))) {
+
+		xf86DeleteDriver(i);
+		continue;
+	    }
         }
 
         if (xorgHWOpenConsole)
@@ -956,6 +963,9 @@ InitInput(int argc, char **argv)
     xf86Info.vtRequestsPending = FALSE;
 
     mieqInit();
+
+    if (xorgWayland)
+	return;
 
     /* Initialize all configured input devices */
     for (pInfo = xf86ConfigLayout.inputs; pInfo && *pInfo; pInfo++) {
@@ -1452,6 +1462,16 @@ ddxProcessArgument(int argc, char **argv, int i)
     }
     if (!strcmp(argv[i], "-sharevts")) {
         xf86Info.ShareVTs = TRUE;
+        return 1;
+    }
+
+    if (!strcmp(argv[i], "-wayland")) {
+        xorgWayland = TRUE;
+        return 1;
+    }
+
+    if (!strcmp(argv[i], "-rootless")) {
+        xorgRootless = TRUE;
         return 1;
     }
 
