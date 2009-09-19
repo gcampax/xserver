@@ -2025,6 +2025,19 @@ DeliverTouchEvents(DeviceIntPtr dev, TouchPointInfoPtr ti,
     }
 }
 
+void
+SetDeviceRedirectWindow(DeviceIntPtr dev, WindowPtr window)
+{
+    SpritePtr pSprite = dev->spriteInfo->sprite;
+    DeviceIntPtr mouse;
+
+    mouse = IsMaster(dev) ? dev : GetMaster(dev, MASTER_POINTER);
+
+    pSprite->redirectWindow = window;
+
+    CheckMotion(NULL, mouse);
+}
+
 int
 InitProximityClassDeviceStruct(DeviceIntPtr dev)
 {
