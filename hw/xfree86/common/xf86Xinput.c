@@ -811,7 +811,7 @@ xf86InputDevicePostInit(DeviceIntPtr dev)
  *
  * @return Success or an error code
  */
-_X_INTERNAL int
+int
 xf86NewInputDevice(InputInfoPtr pInfo, DeviceIntPtr *pdev, BOOL enable)
 {
     InputDriverPtr drv = NULL;
