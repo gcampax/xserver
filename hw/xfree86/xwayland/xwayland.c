@@ -346,15 +346,14 @@ void xwl_screen_post_damage(struct xwl_screen *xwl_screen)
 
     xorg_list_for_each_entry(xwl_window, &xwl_screen->damage_window_list,
 			     link_damage) {
-
 	region = DamageRegion(xwl_window->damage);
 	count = RegionNumRects(region);
 	for (i = 0; i < count; i++) {
 	    box = &RegionRects(region)[i];
 	    wl_surface_damage(xwl_window->surface,
 			      box->x1, box->y1,
-			      box->x2 - box->x1 + 1,
-			      box->y2 - box->y1 + 1);
+			      box->x2 - box->x1,
+			      box->y2 - box->y1);
 	}
 	wl_surface_attach(xwl_window->surface,
 			  xwl_window->buffer,
