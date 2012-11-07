@@ -7,13 +7,13 @@ AM_CPPFLAGS =					\
 	-I$(srcdir)/../modes
 
 libxwayland_la_LTLIBRARIES = libxwayland.la
-libxwayland_la_CFLAGS = \
+AM_CFLAGS = \
 	-DHAVE_XORG_CONFIG_H \
-	@DIX_CFLAGS@ @XORG_CFLAGS@ @LIBDRM_CFLAGS@ \
+	@DIX_CFLAGS@ @XORG_CFLAGS@ @XWAYLAND_CFLAGS@ \
 	-I$(top_srcdir)/hw/xfree86/common \
 	-I$(top_srcdir)/hw/xfree86/os-support/bus
 
-libxwayland_la_LDFLAGS = -module -avoid-version @LIBDRM_LIBS@ -lwayland-client
+libxwayland_la_LDFLAGS = -module -avoid-version @XWAYLAND_LIBS@
 libxwayland_ladir = $(moduledir)/extensions
 libxwayland_la_SOURCES =			\
 	xwayland.c				\
@@ -28,6 +28,8 @@ libxwayland_la_SOURCES =			\
 	xserver-protocol.c
 
 if DRM
+AM_CFLAGS += @LIBDRM_CFLAGS@
+libxwayland_la_LDFLAGS += @LIBDRM_LIBS@
 libxwayland_la_SOURCES += xwayland-drm.c
 endif
 
