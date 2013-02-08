@@ -65,6 +65,8 @@ typedef void (*DRI2CopyRegionProcPtr) (DrawablePtr pDraw,
 typedef void (*DRI2WaitProcPtr) (WindowPtr pWin, unsigned int sequence);
 typedef int (*DRI2AuthMagicProcPtr) (int fd, uint32_t magic);
 typedef int (*DRI2AuthMagic2ProcPtr) (ScreenPtr pScreen, uint32_t magic);
+typedef int (*DRI2AuthMagic3ProcPtr) (ClientPtr client,
+                                      ScreenPtr pScreen, uint32_t magic);
 
 /**
  * Schedule a buffer swap
@@ -213,15 +215,14 @@ typedef struct {
     DRI2ReuseBufferNotifyProcPtr ReuseBufferNotify;
     DRI2SwapLimitValidateProcPtr SwapLimitValidate;
 
-    /* added in version 8 AND in xwayland branch */
-    /* 
-     * MERGE NOTE: when merging xwayland to master, the commit adding this
-     * is unnecessary, but it's slightly different in master.
-     */
+    /* added in version 8 */
     /* AuthMagic callback which passes extra context */
     /* If this is NULL the AuthMagic callback is used */
     /* If this is non-NULL the AuthMagic callback is ignored */
     DRI2AuthMagic2ProcPtr AuthMagic2;
+
+    /* MERGE NOTE: added in xwayland branch */
+    DRI2AuthMagic3ProcPtr AuthMagic3;
 } DRI2InfoRec, *DRI2InfoPtr;
 
 extern _X_EXPORT int DRI2EventBase;
@@ -238,7 +239,11 @@ extern _X_EXPORT Bool DRI2Connect(ScreenPtr pScreen,
                                   const char **driverName,
                                   const char **deviceName);
 
-extern _X_EXPORT Bool DRI2Authenticate(ScreenPtr pScreen, uint32_t magic);
+extern Bool DRI2Authenticate(ClientPtr client,
+                             ScreenPtr pScreen,
+                             uint32_t magic);
+
+extern _X_EXPORT void DRI2SendAuthReply(ClientPtr client, Bool status);
 
 extern _X_EXPORT int DRI2CreateDrawable(ClientPtr client,
                                         DrawablePtr pDraw,

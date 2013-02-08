@@ -106,8 +106,9 @@ typedef struct _DRI2Screen {
     DRI2ScheduleSwapProcPtr ScheduleSwap;
     DRI2GetMSCProcPtr GetMSC;
     DRI2ScheduleWaitMSCProcPtr ScheduleWaitMSC;
-    DRI2AuthMagic2ProcPtr AuthMagic;
     DRI2AuthMagicProcPtr LegacyAuthMagic;
+    DRI2AuthMagic2ProcPtr LegacyAuthMagic2;
+    DRI2AuthMagic3ProcPtr AuthMagic;
     DRI2ReuseBufferNotifyProcPtr ReuseBufferNotify;
     DRI2SwapLimitValidateProcPtr SwapLimitValidate;
 
@@ -1123,11 +1124,11 @@ DRI2AuthMagic (ScreenPtr pScreen, uint32_t magic)
 }
 
 Bool
-DRI2Authenticate(ScreenPtr pScreen, uint32_t magic)
+DRI2Authenticate(ClientPtr client, ScreenPtr pScreen, uint32_t magic)
 {
     DRI2ScreenPtr ds = DRI2GetScreen(pScreen);
 
-    if (ds == NULL || (*ds->AuthMagic) (pScreen, magic))
+    if (ds == NULL || (*ds->AuthMagic) (client, pScreen, magic))
         return FALSE;
 
     return TRUE;
@@ -1222,12 +1223,15 @@ DRI2ScreenInit(ScreenPtr pScreen, DRI2InfoPtr info)
      *
      * If a driver is built without xwayland support, we'll die before we get
      * here. If a driver is built with xwayland support, it'll support
-     * AuthMagic2, or crash; we don't care about xwayland ABI yet.
+     * AuthMagic3, or crash; we don't care about xwayland ABI yet.
      */
     if (xorgWayland) {
-        ds->AuthMagic = info->AuthMagic2;
+        ds->AuthMagic = info->AuthMagic3;
     }
-    
+
+    if (info->version >= 8) {
+        ds->LegacyAuthMagic2 = info->AuthMagic2;
+    }
     if (info->version >= 5) {
         ds->LegacyAuthMagic = info->AuthMagic;
     }
@@ -1247,7 +1251,7 @@ DRI2ScreenInit(ScreenPtr pScreen, DRI2InfoPtr info)
          * If the driver doesn't provide an AuthMagic function
          * it relies on the old method (using libdrm) or fails
          */
-        if (!ds->LegacyAuthMagic)
+        if (!ds->LegacyAuthMagic2 && !ds->LegacyAuthMagic)
 #ifdef WITH_LIBDRM
             ds->LegacyAuthMagic = drmAuthMagic;
 #else
