@@ -63,6 +63,7 @@ struct xwl_screen {
     struct xorg_list		 window_list;
     struct xorg_list		 authenticate_client_list;
     uint32_t			 serial;
+    Bool                         outputs_initialized;
 
     CreateWindowProcPtr		 CreateWindow;
     DestroyWindowProcPtr	 DestroyWindow;

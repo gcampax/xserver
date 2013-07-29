@@ -36,6 +36,7 @@
 #include <cursorstr.h>
 #include <xf86Crtc.h>
 #include <mipointrst.h>
+#include <randrstr.h>
 
 #include "xwayland.h"
 #include "xwayland-private.h"
@@ -198,6 +199,7 @@ xwl_output_create(struct xwl_screen *xwl_screen)
     xf86output->possible_clones = 1;
 
     xf86crtc = xf86CrtcCreate(xwl_screen->scrninfo, &crtc_funcs);
+    xf86crtc->enabled = TRUE;
     xf86crtc->driver_private = xwl_output;
 
     xwl_output->xf86output = xf86output;
@@ -262,11 +264,48 @@ display_handle_mode(void *data, struct wl_output *wl_output, uint32_t flags,
 		    int width, int height, int refresh)
 {
     struct xwl_output *xwl_output = data;
+    struct xwl_screen *xwl_screen = xwl_output->xwl_screen;
+    ScreenPtr pScreen = xwl_screen->screen;
+    ScrnInfoPtr scrn = xwl_screen->scrninfo;
+    CARD16 width_mm, height_mm;
+    DisplayModePtr mode;
+    rrScrPrivPtr rp;
 
-    if (flags & WL_OUTPUT_MODE_CURRENT) {
-	xwl_output->width = width;
-	xwl_output->height = height;
+    if (!(flags & WL_OUTPUT_MODE_CURRENT))
+	return;
+
+    xwl_output->width = width;
+    xwl_output->height = height;
+
+    if (xwl_output->x + xwl_output->width > scrn->virtualX ||
+	xwl_output->y + xwl_output->height > scrn->virtualY) {
+	/* Fake a RandR request to resize the screen. It will bounce
+	   back to our crtc_resize, which does nothing.
+	*/
+	/* Preupdate virtualX / virtualY, so that crtc_resize returns TRUE */
+	scrn->virtualX = xwl_output->x + xwl_output->width;
+	scrn->virtualY = xwl_output->y + xwl_output->height;
+
+	/* Ignore the compositor provided values for mm_width/mm_height,
+	   as it doesn't make sense to sum the values of different outputs.
+	   Just make the DPI 96 */
+	width_mm = (scrn->virtualX / 96.0) * 25.4 + 0.5;
+	height_mm = (scrn->virtualY / 96.0) * 25.4 + 0.5;
+
+	/* But! When the server starts, the RandR stuff is not initialized,
+	   so we can't call rrGetScrPriv. We updated virtualX/Y anyway, let's
+	   hope it's enough.
+	*/
+	if (xwl_screen->outputs_initialized) {
+	    rp = rrGetScrPriv(pScreen);
+	    if (rp->rrScreenSetSize)
+		rp->rrScreenSetSize(pScreen, scrn->virtualX, scrn->virtualY, width_mm, height_mm);
+	}
     }
+
+    xwl_output->xf86crtc->enabled = TRUE;
+    mode = xf86CVTMode(width, height, 60, TRUE, FALSE);
+    xf86CrtcSetModeTransform(xwl_output->xf86crtc, mode, RR_Rotate_0, NULL, xwl_output->x, xwl_output->y);
 }
 
 static const struct wl_output_listener output_listener = {
@@ -324,6 +363,7 @@ void
 xwayland_screen_preinit_output(struct xwl_screen *xwl_screen, ScrnInfoPtr scrninfo)
 {
     int ret;
+    DisplayModePtr last, mode = NULL;
 
     xf86CrtcConfigInit(scrninfo, &config_funcs);
 
@@ -339,5 +379,25 @@ xwayland_screen_preinit_output(struct xwl_screen *xwl_screen, ScrnInfoPtr scrnin
             FatalError("failed to dispatch Wayland events: %s\n", strerror(errno));
     }
 
-    xf86InitialConfiguration(scrninfo, TRUE);
+    xwl_screen->outputs_initialized = TRUE;
+
+    if (!scrninfo->modes) {
+        scrninfo->modes = xf86ModesAdd(scrninfo->modes,
+				       xf86CVTMode(scrninfo->display->virtualX,
+						   scrninfo->display->virtualY,
+						   60, 0, 0));
+    }
+
+    /* For some reason, scrninfo->modes is circular, unlike the other mode
+     * lists.  How great is that?
+     */
+    for (last = scrninfo->modes; last && last->next; last = last->next);
+    last->next = scrninfo->modes;
+    scrninfo->modes->prev = last;
+    if (mode) {
+        while (scrninfo->modes != mode)
+            scrninfo->modes = scrninfo->modes->next;
+    }
+
+    scrninfo->currentMode = scrninfo->modes;
 }
