@@ -119,8 +119,15 @@ drm_handler(void *data, struct wl_registry *registry, uint32_t id,
     }
 }
 
+static void
+global_remove(void *data, struct wl_registry *registry, uint32_t name)
+{
+    /* Nothing to do here, wl_drm should not be removed */
+}
+
 static const struct wl_registry_listener drm_listener = {
     drm_handler,
+    global_remove
 };
 
 int

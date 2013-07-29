@@ -95,6 +95,14 @@ crtc_shadow_destroy(xf86CrtcPtr crtc, PixmapPtr rotate_pixmap, void *data)
 {
 }
 
+static void
+crtc_destroy(xf86CrtcPtr crtc)
+{
+    /* Nothing to do here, we only destroy CRTCs when instructed to do
+       so by wl_output changes
+    */
+}
+
 static const xf86CrtcFuncsRec crtc_funcs = {
     .dpms                = crtc_dpms,
     .set_mode_major      = crtc_set_mode_major,
@@ -106,7 +114,7 @@ static const xf86CrtcFuncsRec crtc_funcs = {
     .shadow_create       = crtc_shadow_create,
     .shadow_allocate     = crtc_shadow_allocate,
     .shadow_destroy      = crtc_shadow_destroy,
-    .destroy		 = NULL, /* XXX */
+    .destroy		 = crtc_destroy,
 };
 
 static void
@@ -246,7 +254,7 @@ display_handle_geometry(void *data, struct wl_output *wl_output, int x, int y,
     xwl_output->x = x;
     xwl_output->y = y;
 
-    xwl_screen->xwl_output = xwl_output;
+    xorg_list_append (&xwl_output->link, &xwl_screen->output_list);
 }
 
 static void
@@ -277,13 +285,39 @@ global_handler(void *data, struct wl_registry *registry, uint32_t id,
 	xwl_output = xwl_output_create(xwl_screen);
 	xwl_output->output = wl_registry_bind(registry, id,
 	                                      &wl_output_interface, 1);
+	xwl_output->name = id;
 	wl_output_add_listener(xwl_output->output,
 			       &output_listener, xwl_output);
     }
 }
 
+void
+xwl_output_remove(struct xwl_output *xwl_output)
+{
+    xorg_list_del (&xwl_output->link);
+    xf86OutputDestroy (xwl_output->xf86output);
+    xf86CrtcDestroy (xwl_output->xf86crtc);
+
+    wl_output_destroy (xwl_output->output);
+}
+
+static void
+global_remove(void *data, struct wl_registry *registry, uint32_t name)
+{
+    struct xwl_screen *xwl_screen = data;
+    struct xwl_output *xwl_output, *tmp;
+
+    xorg_list_for_each_entry_safe (xwl_output, tmp, &xwl_screen->output_list, link) {
+	if (xwl_output->name == name) {
+	    xwl_output_remove(xwl_output);
+	    break;
+	}
+    }
+}  
+
 static const struct wl_registry_listener global_listener = {
     global_handler,
+    global_remove
 };
 
 void
@@ -299,7 +333,7 @@ xwayland_screen_preinit_output(struct xwl_screen *xwl_screen, ScrnInfoPtr scrnin
     wl_registry_add_listener(xwl_screen->output_registry, &global_listener,
                              xwl_screen);
 
-    while (!xwl_screen->xwl_output) {
+    while (xwl_screen->output_list.next == &xwl_screen->output_list) {
         ret = wl_display_roundtrip(xwl_screen->display);
         if (ret == -1)
             FatalError("failed to dispatch Wayland events: %s\n", strerror(errno));
