@@ -519,7 +519,11 @@ xf86InputDriverlistFromConfig(void)
 static void
 fixup_video_driver_list(char **drivers)
 {
-    static const char *fallback[4] = { "vesa", "fbdev", "wsfb", NULL };
+    static const char *fallback_hw[4] = { "vesa", "fbdev", "wsfb", NULL };
+#ifdef XORG_WAYLAND
+    static const char *fallback_wayland[2] = { "wlshm", NULL };
+#endif
+    const char **fallbacks;
     char **end, **drv;
     char *x;
     int i;
@@ -532,9 +536,15 @@ fixup_video_driver_list(char **drivers)
      * for each of the fallback drivers, if we find it in the list,
      * swap it with the last available non-fallback driver.
      */
-    for (i = 0; fallback[i]; i++) {
+#ifdef XORG_WAYLAND
+    if (xorgWayland)
+        fallbacks = fallback_wl;
+    else
+#endif
+        fallbacks = fallback_hw;
+    for (i = 0; fallbacks[i]; i++) {
         for (drv = drivers; drv != end; drv++) {
-            if (strstr(*drv, fallback[i])) {
+            if (strstr(*drv, fallbacks[i])) {
                 x = *drv;
                 *drv = *end;
                 *end = x;
