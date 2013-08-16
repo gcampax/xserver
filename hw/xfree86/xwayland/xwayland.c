@@ -277,19 +277,43 @@ xwl_create_window_buffer_shm(struct xwl_window *xwl_window,
 			     PixmapPtr pixmap, int fd)
 {
     struct wl_shm_pool *pool;
-    int size, stride;
+    WindowPtr window = xwl_window->window;
+    ScreenPtr screen = window->drawable.pScreen;
+    VisualID visual = wVisual(window);
+    uint32_t format;
+    int size, stride, bpp, i;
 
-    stride = pixmap->drawable.width * 4;
+    for (i = 0; i < screen->numVisuals; i++)
+        if (screen->visuals[i].vid == visual)
+            break;
 
-    size = pixmap->drawable.width * pixmap->drawable.height * 4;
+    switch (screen->visuals[i].nplanes) {
+    case 32:
+        format = WL_SHM_FORMAT_ARGB8888;
+        bpp = 4;
+        break;
+    case 24:
+    default:
+        format = WL_SHM_FORMAT_XRGB8888;
+        bpp = 4;
+        break;
+#ifdef WL_SHM_FORMAT_RGB565
+    case 16:
+        /* XXX: Check run-time protocol version too */
+        format = WL_SHM_FORMAT_RGB565;
+        bpp = 2;
+        break;
+#endif
+    }
+
+    stride = pixmap->drawable.width * bpp;
+    size = stride * pixmap->drawable.height;
+
     pool = wl_shm_create_pool(xwl_window->xwl_screen->shm, fd, size);
     xwl_window->buffer =  wl_shm_pool_create_buffer(pool, 0,
 			   pixmap->drawable.width,
 			   pixmap->drawable.height,
-			   stride,
-			   pixmap->drawable.depth == 32 ?
-			   WL_SHM_FORMAT_ARGB8888 :
-			   WL_SHM_FORMAT_XRGB8888);
+			   stride, format);
     wl_shm_pool_destroy(pool);
 
     return xwl_window->buffer ? Success : BadDrawable;
