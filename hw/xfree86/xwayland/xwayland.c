@@ -278,7 +278,10 @@ xwl_create_window_buffer_shm(struct xwl_window *xwl_window,
     xwl_window->buffer =  wl_shm_pool_create_buffer(pool, 0,
 			   pixmap->drawable.width,
 			   pixmap->drawable.height,
-			   stride, WL_SHM_FORMAT_ARGB8888);
+			   stride,
+			   pixmap->drawable.depth == 32 ?
+			   WL_SHM_FORMAT_ARGB8888 :
+			   WL_SHM_FORMAT_XRGB8888);
     wl_shm_pool_destroy(pool);
 
     return xwl_window->buffer ? Success : BadDrawable;
