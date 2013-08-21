@@ -44,7 +44,6 @@ struct xwl_screen {
     ScrnInfoPtr			 scrninfo;
     int				 drm_fd;
     int				 wayland_fd;
-    struct xwl_output		*xwl_output;
     struct wl_display		*display;
     struct wl_registry          *registry;
     struct wl_registry          *drm_registry;
@@ -58,6 +57,7 @@ struct xwl_screen {
     uint32_t			 flags;
     char			*device_name;
     uint32_t			 authenticated;
+    struct xorg_list		 output_list;
     struct xorg_list		 seat_list;
     struct xorg_list		 damage_window_list;
     struct xorg_list		 window_list;
@@ -74,12 +74,14 @@ struct xwl_screen {
 };
 
 struct xwl_output {
+    struct xorg_list             link;
     struct wl_output		*output;
     struct xwl_screen		*xwl_screen;
     int32_t			 x, y, width, height;
     xf86Monitor			 xf86monitor;
     xf86OutputPtr		 xf86output;
     xf86CrtcPtr			 xf86crtc;
+    int32_t                      name;
 };
 
 
@@ -126,6 +128,8 @@ void xwl_input_init(struct xwl_screen *screen);
 Bool xwl_drm_initialised(struct xwl_screen *screen);
 
 void xwl_seat_set_cursor(struct xwl_seat *xwl_seat);
+
+void xwl_output_remove(struct xwl_output *output);
 
 extern const struct xserver_listener xwl_server_listener;
 

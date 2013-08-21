@@ -597,8 +597,15 @@ input_handler(void *data, struct wl_registry *registry, uint32_t id,
     }
 }
 
+static void
+global_remove(void *data, struct wl_registry *registry, uint32_t name)
+{
+    /* FIXME */
+}
+
 static const struct wl_registry_listener input_listener = {
     input_handler,
+    global_remove,
 };
 
 void

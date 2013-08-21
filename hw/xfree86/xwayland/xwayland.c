@@ -103,8 +103,15 @@ registry_global(void *data, struct wl_registry *registry, uint32_t id,
     }
 }
 
+static void
+global_remove(void *data, struct wl_registry *registry, uint32_t name)
+{
+    /* Nothing to do here, wl_compositor and wl_shm should not be removed */
+}
+
 static const struct wl_registry_listener registry_listener = {
     registry_global,
+    global_remove
 };
 
 static void
@@ -230,6 +237,7 @@ xwl_screen_pre_init(ScrnInfoPtr scrninfo, struct xwl_screen *xwl_screen,
 	return FALSE;
     }
 
+    xorg_list_init(&xwl_screen->output_list);
     xorg_list_init(&xwl_screen->seat_list);
     xorg_list_init(&xwl_screen->damage_window_list);
     xorg_list_init(&xwl_screen->window_list);
@@ -318,12 +326,13 @@ void xwl_screen_close(struct xwl_screen *xwl_screen)
 
 void xwl_screen_destroy(struct xwl_screen *xwl_screen)
 {
-    if (xwl_screen->xwl_output) {
-	xf86OutputDestroy(xwl_screen->xwl_output->xf86output);
-	xf86CrtcDestroy(xwl_screen->xwl_output->xf86crtc);
+    struct xwl_output *xwl_output, *tmp;
+
+    xorg_list_for_each_entry_safe (xwl_output, tmp, &xwl_screen->output_list, link) {
+	xwl_output_remove(xwl_output);
+	break;
     }
 
-    free(xwl_screen->xwl_output);
     free(xwl_screen);
 }
 
