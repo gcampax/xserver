@@ -547,11 +547,14 @@ InitOutput(ScreenInfo * pScreenInfo, int argc, char **argv)
             if (!(flags & HW_SKIP_CONSOLE))
                 xorgHWOpenConsole = TRUE;
 
-	    if (xorgWayland &&
-		(NEED_IO_ENABLED(flags) || !(flags & HW_SKIP_CONSOLE))) {
+	    if (xorgWayland) {
+                if (flags != HW_WAYLAND) {
+                    xf86DeleteDriver(i);
+                    continue;
+                }
 
-		xf86DeleteDriver(i);
-		continue;
+                want_hw_access = FALSE;
+                xorgHWOpenConsole = FALSE;
 	    }
         }
 
