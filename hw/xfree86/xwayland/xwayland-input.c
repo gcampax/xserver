@@ -460,6 +460,34 @@ keyboard_handle_keymap(void *data, struct wl_keyboard *keyboard,
 	;	/* wah wah */
 
     close(fd);
+
+    if (xwl_seat->keyboard && xwl_seat->keyboard->key) {
+        DeviceIntPtr dev = xwl_seat->keyboard;
+        xkbNewKeyboardNotify nkn;
+        XkbDescPtr new_keymap;
+
+        new_keymap = XkbCompileKeymapFromString(xwl_seat->keyboard,
+                                                xwl_seat->keymap,
+                                                xwl_seat->keymap_size);
+        if (new_keymap == NULL)
+            return;
+
+        memset(&nkn, 0, sizeof(xkbNewKeyboardNotify));
+        nkn.oldMinKeyCode = dev->key->xkbInfo->desc->min_key_code;
+        nkn.oldMaxKeyCode = dev->key->xkbInfo->desc->max_key_code;
+        nkn.deviceID = dev->id;
+        nkn.oldDeviceID = dev->id;
+        nkn.minKeyCode = new_keymap->min_key_code;
+        nkn.maxKeyCode = new_keymap->max_key_code;
+        nkn.requestMajor = XkbReqCode;
+        nkn.requestMinor = X_kbSetMap;
+        nkn.changed = XkbNKN_KeycodesMask;
+
+        if (XkbCopyKeymap(dev->key->xkbInfo->desc, new_keymap))
+            XkbSendNewKeyboardNotify(dev, &nkn);
+
+        XkbFreeKeyboard(new_keymap, XkbAllComponentsMask, TRUE);
+    }
 }
 
 static void
