@@ -431,6 +431,8 @@ xwayland_screen_preinit_output(struct xwl_screen *xwl_screen, ScrnInfoPtr scrnin
             FatalError("failed to dispatch Wayland events: %s\n", strerror(errno));
     }
 
+    xf86ProbeOutputModes(scrninfo, 0, 0);
+
     xwl_screen->outputs_initialized = TRUE;
 
     xf86SetScrnInfoModes(scrninfo);
