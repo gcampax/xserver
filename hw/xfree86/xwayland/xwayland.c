@@ -54,7 +54,6 @@
  */
 
 static DevPrivateKeyRec xwl_screen_private_key;
-static Atom xdnd_atom;
 
 static void
 xserver_client(void *data, struct xserver *xserver, int fd)
@@ -178,31 +177,6 @@ xwl_screen_get(ScreenPtr screen)
     return dixLookupPrivate(&screen->devPrivates, &xwl_screen_private_key);
 }
 
-static void
-xwayland_selection_callback(CallbackListPtr *callbacks,
-			    pointer data, pointer args)
-{
-    SelectionInfoRec *info = (SelectionInfoRec *) args;
-    Selection *selection = info->selection;
-
-    switch (info->kind) {
-    case SelectionSetOwner:
-	if (selection->selection == xdnd_atom) {
-	    if (selection->window != None)
-		ErrorF("client %p starts dnd\n", info->client);
-	    else
-		ErrorF("client %p stops dnd\n", info->client);
-	}
-	break;
-    case SelectionWindowDestroy:
-	ErrorF("selection window destroy\n");
-	break;
-    case SelectionClientClose:
-	ErrorF("selection client close\n");
-	break;
-    }
-}
-
 struct xwl_screen *
 xwl_screen_create(void)
 {
@@ -230,12 +204,6 @@ xwl_screen_pre_init(ScrnInfoPtr scrninfo, struct xwl_screen *xwl_screen,
     int ret;
 
     noScreenSaverExtension = TRUE;
-
-    xdnd_atom = MakeAtom("XdndSelection", 13, 1);
-    if (!AddCallback(&SelectionCallback,
-		     xwayland_selection_callback, xwl_screen)) {
-	return FALSE;
-    }
 
     xorg_list_init(&xwl_screen->output_list);
     xorg_list_init(&xwl_screen->seat_list);
