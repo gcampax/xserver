@@ -64,7 +64,6 @@ SOFTWARE.
 #include <dix-config.h>
 #endif
 
-#include <xorg-server.h>
 #ifdef WIN32
 #include <X11/Xwinsock.h>
 #endif
@@ -1259,7 +1258,6 @@ MakeClientGrabPervious(ClientPtr client)
     }
 }
 
-#if defined(XQUARTZ) || defined(XORG_WAYLAND)
 /* Add a fd (from launchd) to our listeners */
 void
 ListenOnOpenFD(int fd, int noxauth)
@@ -1334,5 +1332,3 @@ AddClientOnOpenFD(int fd)
         return;
     }
 }
-
-#endif
