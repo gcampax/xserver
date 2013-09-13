@@ -32,7 +32,6 @@
 #include <sys/mman.h>
 #include <wayland-client.h>
 
-#include <xorg-server.h>
 #include <cursorstr.h>
 #include <xf86Crtc.h>
 #include <mipointrst.h>

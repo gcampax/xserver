@@ -34,7 +34,6 @@
 #include <wayland-util.h>
 #include <wayland-client.h>
 
-#include <xorg-server.h>
 #include <extinit.h>
 
 #include <xf86Xinput.h>

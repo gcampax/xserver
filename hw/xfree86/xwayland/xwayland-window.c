@@ -33,7 +33,6 @@
 #include <wayland-client.h>
 #include <X11/extensions/compositeproto.h>
 
-#include <xorg-server.h>
 #include <xf86Crtc.h>
 #include <selection.h>
 #include <compositeext.h>
