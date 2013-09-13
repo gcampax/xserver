@@ -521,7 +521,7 @@ fixup_video_driver_list(char **drivers)
 {
     static const char *fallback_hw[4] = { "vesa", "fbdev", "wsfb", NULL };
 #ifdef XORG_WAYLAND
-    static const char *fallback_wayland[2] = { "wlshm", NULL };
+    static const char *fallback_wl[2] = { "wayland", NULL };
 #endif
     const char **fallbacks;
     char **end, **drv;

@@ -285,7 +285,7 @@ listPossibleVideoDrivers(char *matches[], int nmatches)
     if (i < (nmatches - 1)) {
 #ifdef XORG_WAYLAND
         if (xorgWayland)
-            matches[i++] = xnfstrdup("wlshm");
+            matches[i++] = xnfstrdup("wayland");
         else
 #endif
 #if !defined(__linux__) && defined(__sparc__)
