@@ -558,6 +558,15 @@ InitOutput(ScreenInfo * pScreenInfo, int argc, char **argv)
 	    }
         }
 
+        for (i = 0; i < xf86NumDrivers; i++) {
+                if (xf86DriverList[i] == NULL) {
+                        for (j = i; j < xf86NumDrivers; j++) {
+                            xf86DriverList[j] = xf86DriverList[j + 1];
+                        }
+                        xf86NumDrivers--;
+                }
+        }
+
         if (xorgHWOpenConsole)
             xf86OpenConsole();
         else
