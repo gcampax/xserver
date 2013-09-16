@@ -40,8 +40,6 @@
 #include "xwayland-private.h"
 #include "xserver-client-protocol.h"
 
-static DevPrivateKeyRec xwl_cursor_private_key;
-
 static void
 expand_source_and_mask(CursorPtr cursor, void *data)
 {
@@ -129,7 +127,8 @@ xwl_realize_cursor(DeviceIntPtr device, ScreenPtr screen, CursorPtr cursor)
 				  WL_SHM_FORMAT_ARGB8888);
     wl_shm_pool_destroy(pool);
 
-    dixSetPrivate(&cursor->devPrivates, &xwl_cursor_private_key, buffer);
+    dixSetPrivate(&cursor->devPrivates,
+                  &xwl_screen->cursor_private_key, buffer);
 
     return TRUE;
 }
@@ -139,8 +138,11 @@ xwl_unrealize_cursor(DeviceIntPtr device,
 			ScreenPtr screen, CursorPtr cursor)
 {
     struct wl_buffer *buffer;
+    struct xwl_screen *xwl_screen;
 
-    buffer = dixGetPrivate(&cursor->devPrivates, &xwl_cursor_private_key);
+    xwl_screen = xwl_screen_get(screen);
+    buffer = dixGetPrivate(&cursor->devPrivates,
+                           &xwl_screen->cursor_private_key);
     wl_buffer_destroy(buffer);
 
     return TRUE;
@@ -155,7 +157,7 @@ xwl_seat_set_cursor(struct xwl_seat *xwl_seat)
         return;
 
     buffer = dixGetPrivate(&xwl_seat->x_cursor->devPrivates,
-                           &xwl_cursor_private_key);
+                           &xwl_seat->xwl_screen->cursor_private_key);
 
     wl_pointer_set_cursor(xwl_seat->wl_pointer,
 			  xwl_seat->pointer_enter_serial,
@@ -229,7 +231,8 @@ xwl_screen_init_cursor(struct xwl_screen *xwl_screen, ScreenPtr screen)
 {
     miPointerScreenPtr pointer_priv;
 
-    if (!dixRegisterPrivateKey(&xwl_cursor_private_key, PRIVATE_CURSOR, 0))
+    if (!dixRegisterPrivateKey(&xwl_screen->cursor_private_key,
+                               PRIVATE_CURSOR, 0))
 	return BadAlloc;
 
     pointer_priv = dixLookupPrivate(&screen->devPrivates, miPointerScreenKey);

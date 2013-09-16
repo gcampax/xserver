@@ -65,6 +65,8 @@ struct xwl_screen {
     uint32_t			 serial;
     Bool                         outputs_initialized;
 
+    DevPrivateKeyRec             cursor_private_key;
+
     CreateWindowProcPtr		 CreateWindow;
     DestroyWindowProcPtr	 DestroyWindow;
     RealizeWindowProcPtr	 RealizeWindow;
