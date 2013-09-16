@@ -92,9 +92,6 @@ xwl_create_window(WindowPtr window)
 {
     ScreenPtr screen = window->drawable.pScreen;
     struct xwl_screen *xwl_screen;
-    char buffer[32];
-    int len, rc;
-    Atom name;
     Bool ret;
 
     xwl_screen = xwl_screen_get(screen);
